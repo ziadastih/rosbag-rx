@@ -9,6 +9,9 @@
     "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "noImplicitAny": false,
-    "strictNullChecks": false
-  }
+    "strictNullChecks": false,
+    "outDir": "dist"
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
 }
