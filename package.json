@@ -18,7 +18,8 @@
     "buffer": "^6.0.3",
     "int53": "^1.0.0",
     "lz4js": "^0.2.0",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "seek-bzip": "^2.0.0"
   },
   "devDependencies": {
     "@types/lz4js": "^0.2.1",
