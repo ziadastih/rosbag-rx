@@ -2,6 +2,11 @@ import { IRecordFields, IRecordShallow, ITime } from "./models/general.models";
 import * as LZ4 from "lz4js";
 import { Buffer } from "buffer";
 import { IMsgFormat, IMsgSchema } from "./models/chunk-info-manager.model";
+import { decode } from "seek-bzip";
+
+if (typeof globalThis.Buffer === "undefined") {
+  (globalThis as any).Buffer = Buffer;
+}
 
 export const extractFields = (buffer: Buffer): IRecordFields | undefined => {
   let offset = 0;
@@ -98,6 +103,7 @@ export const recordDecompression = {
   none: (buffer: Buffer, size: number) => buffer,
   lz4: (buffer: Buffer, size: number) =>
     Buffer.from(LZ4.decompress(buffer, size)),
+  bz2: (buffer: Buffer, size: number) => Buffer.from(decode(buffer)),
 };
 
 /**

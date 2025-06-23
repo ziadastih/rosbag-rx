@@ -6,7 +6,22 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "keywords": [],
+  "keywords": [
+    "ros",
+    "rosbag",
+    "rosbag-play",
+    "rosbag-parser",
+    "rosbag-js",
+    "robotics",
+    "ros-playback",
+    "ros-visualization",
+    "robot-data",
+    "robot-telemetry",
+    "bag-playback",
+    "bag-file",
+    "rxjs",
+    "browser"
+  ],
   "repository": {
     "url": "https://github.com/ziadastih/rosbag-rx"
   },
@@ -18,7 +33,8 @@
     "buffer": "^6.0.3",
     "int53": "^1.0.0",
     "lz4js": "^0.2.0",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "seek-bzip": "^2.0.0"
   },
   "devDependencies": {
     "@types/lz4js": "^0.2.1",

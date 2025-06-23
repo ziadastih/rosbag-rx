@@ -102,7 +102,6 @@ export class MessageReaders {
   private msgTypesParsers = new Map<string, Function>();
   private _schemas = new Map<string, boolean>();
   msg = {};
-  result = {};
 
   private _createParser = (format: IMsgFormat) => {
     const cachedParser = this.msgTypesParsers.get(format.keyType);
@@ -111,12 +110,12 @@ export class MessageReaders {
     }
     const formatFields = format.nestedKeys;
     const parser = (reader: StdTypeReader) => {
-      this.result = {};
+      const result = {};
       for (let i = 0; i < formatFields.length; i++) {
         const field = formatFields[i];
-        this.result[field.key] = this.parseField(reader, field);
+        result[field.key] = this.parseField(reader, field);
       }
-      return this.result;
+      return result;
     };
     this.msgTypesParsers.set(format.keyType, parser);
     return parser;
