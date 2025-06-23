@@ -1,6 +1,8 @@
 import {
   BehaviorSubject,
+  catchError,
   defer,
+  EMPTY,
   filter,
   map,
   Observable,
@@ -35,19 +37,34 @@ import { IChunkInfo, IConnection } from "./models/chunk-info-manager.model";
 export class BagInspector {
   private _bagFile$ = new BehaviorSubject<File | null>(null);
   private _destroyInstance$ = new Subject<boolean>();
+  private _error$ = new Subject<string>();
+
   get bagMetadata$(): Observable<IBagMetadata> {
     return this._bagFile$.pipe(
       takeUntil(this._destroyInstance$),
       filter((file): file is File => !!file),
       switchMap((file) =>
         this._readHeader$(file).pipe(
+          catchError((err) => {
+            this._error$.next(err);
+            return EMPTY;
+          }),
           switchMap((headerInfo) =>
-            this._extractFileMetadata$(file, headerInfo)
+            this._extractFileMetadata$(file, headerInfo).pipe(
+              catchError((err) => {
+                this._error$.next(err);
+                return EMPTY;
+              })
+            )
           )
         )
       ),
       shareReplay(1)
     );
+  }
+
+  get error$() {
+    return this._error$.asObservable();
   }
 
   setFile(file: File): void {
@@ -158,7 +175,7 @@ export class BagInspector {
           indexPos,
           this._parseConnectionRecord
         );
-
+        if (connections.length === 0) throw new Error("No connections found");
         const connectionsMap = new Map(
           connections.map((connection) => [connection.conn, connection])
         );
@@ -173,7 +190,7 @@ export class BagInspector {
           chunksInfoOffset,
           this._parseChunkInfo
         );
-
+        if (chunksInfo.length === 0) throw new Error("No chunks found");
         chunksInfo = chunksInfo
           .map((chunk, i) => ({
             ...chunk,
