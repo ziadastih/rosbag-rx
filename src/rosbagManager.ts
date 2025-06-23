@@ -29,6 +29,7 @@ export class RosbagManager {
     playbackSpeed: 1,
     loop: true,
   });
+  private _filteredConnections = new Set();
   private _isPlaying$ = new BehaviorSubject<boolean>(false);
   private _currentBagTime$ = new BehaviorSubject<ITime | null>(null);
   private _wallStartTime = 0;
@@ -86,9 +87,12 @@ export class RosbagManager {
     );
   }
   get messages$() {
-    return this._onMessages
-      .asObservable()
-      .pipe(takeUntil(this._destroyInstance$));
+    return this._onMessages.asObservable().pipe(
+      takeUntil(this._destroyInstance$),
+      map((msgs) => {
+        return msgs.filter((msg) => this._filteredConnections.has(msg.topic));
+      })
+    );
   }
   get error$() {
     return this._bagInspector.error$;
@@ -98,6 +102,7 @@ export class RosbagManager {
     this._resetPlayback();
     this._bagInspector.setFile(file);
     this._chunkManager.setFile(file);
+    this._filteredConnections.clear();
   }
   //#region  playBack controls
 
@@ -160,9 +165,16 @@ export class RosbagManager {
     this._cancelPrefetch$.next();
     this._seek$.next({ time, autoResume: this._isPlaying$.value });
   }
+  //#endregion
 
-  updateOptions(options: IRosbagOptions) {
+  updateOptions(options: Partial<IRosbagOptions>) {
     this._options$.next({ ...this._options$.value, ...options });
+  }
+  showConnectionMsgs(connection: string) {
+    this._filteredConnections.add(connection);
+  }
+  hideConnectionMsgs(connection: string) {
+    this._filteredConnections.delete(connection);
   }
 
   destroyInstance() {
@@ -170,8 +182,8 @@ export class RosbagManager {
     this._destroyInstance$.next();
     this._destroyInstance$.complete();
     this._bagInspector.destroyInstance();
+    this._filteredConnections.clear();
   }
-  //#endregion
 
   private _prefetchChunks(startTime: ITime): void {
     if (!this._bagMetadata$.value) return;
@@ -240,5 +252,3 @@ export class RosbagManager {
     this._currentBagTime$.next(null);
   }
 }
-
-// todo add filter by topic
