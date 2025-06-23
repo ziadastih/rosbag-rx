@@ -64,7 +64,7 @@ export class BagInspector {
   }
 
   get error$() {
-    return this._error$.asObservable().pipe(takeUntil(this._destroyInstance$));
+    return this._error$.asObservable();
   }
 
   setFile(file: File): void {

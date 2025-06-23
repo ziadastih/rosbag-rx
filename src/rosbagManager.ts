@@ -95,7 +95,7 @@ export class RosbagManager {
     );
   }
   get error$() {
-    return this._bagInspector.error$;
+    return this._bagInspector.error$.pipe(takeUntil(this._destroyInstance$));
   }
 
   loadFile(file: File) {
