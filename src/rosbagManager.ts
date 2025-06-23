@@ -90,6 +90,9 @@ export class RosbagManager {
       .asObservable()
       .pipe(takeUntil(this._destroyInstance$));
   }
+  get error$() {
+    return this._bagInspector.error$;
+  }
 
   loadFile(file: File) {
     this._resetPlayback();
@@ -171,6 +174,7 @@ export class RosbagManager {
   //#endregion
 
   private _prefetchChunks(startTime: ITime): void {
+    if (!this._bagMetadata$.value) return;
     const prefetchEndTime = addSecToTime(
       startTime,
       this._options$.value.prefetch
