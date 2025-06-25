@@ -11,6 +11,7 @@ npm install rosbag-rx
 ```
 
 ## 🎯 Purpose
+
 rosbag-rx brings the simplicity of rosbag play to the browser and modern frontend environments.
 
 It removes the need to manually handle .bag file parsing, message decoding, or timing synchronization — allowing you to focus on building robotics tools instead of reinventing playback logic.
@@ -27,7 +28,6 @@ With just a few lines of code, you can load a .bag file, extract metadata, and s
 - 🔌 Easily toggle topic streams
 - 🧹 Built-in cleanup mechanism
 
-
 ## 🧪 Advanced Usage (RosbagManager)
 
 The `RosbagManager` class is the main interface for high-level bag playback. It handles state management, playback, message streaming, and cleanup — all through a clean RxJS-based API.
@@ -39,10 +39,11 @@ You can reuse the same `RosbagManager` instance for multiple files. It will auto
 ### 🧱 Initialize
 
 ```ts
-import { RosbagManager } from 'rosbag-rx';
+import { RosbagManager } from "rosbag-rx";
 
 const rosbagManager = new RosbagManager();
 ```
+
 ---
 
 ### 📡 Subscribe to Bag State
@@ -71,7 +72,7 @@ rosbagManager.state$.subscribe({
     //   },
     //   isPlaying: false
     // }
-  }
+  },
 });
 ```
 
@@ -81,15 +82,15 @@ rosbagManager.state$.subscribe({
 
 You can subscribe to `error$` to receive well-explained errors such as:
 
-* Corrupted bag file
-* Parsing issues
-* Unsupported or malformed message structures
+- Corrupted bag file
+- Parsing issues
+- Unsupported or malformed message structures
 
 ```ts
 rosbagManager.error$.subscribe({
   next: (error) => {
-    console.error('Bag error:', error);
-  }
+    console.error("Bag error:", error);
+  },
 });
 ```
 
@@ -102,8 +103,8 @@ You will receive an array of messages for the **currently active time slice**, f
 ```ts
 rosbagManager.messages$.subscribe({
   next: (messages) => {
-    console.log('Received messages:', messages);
-  }
+    console.log("Received messages:", messages);
+  },
 });
 ```
 
@@ -112,7 +113,7 @@ rosbagManager.messages$.subscribe({
 ### 📂 Load and Control Playback
 
 ```ts
-await rosbagManager.loadFile(file); // File, Blob, or ArrayBuffer
+rosbagManager.loadFile(file);
 
 rosbagManager.play();
 rosbagManager.pause();
@@ -126,8 +127,8 @@ rosbagManager.seek({ sec: 0, nsec: 0 }); // Seek to start
 ```ts
 rosbagManager.updateOptions({
   playbackSpeed: 5, // Default is 1
-  prefetch: 1,      // Default is 10 seconds (recommended)
-  loop: false       // Default is true
+  prefetch: 1, // Default is 10 seconds (recommended)
+  loop: false, // Default is true
 });
 ```
 
@@ -140,13 +141,13 @@ By default, **all topics are disabled**. To receive messages, you must explicitl
 #### Show a topic:
 
 ```ts
-rosbagManager.showConnectionMsgs('/odom');
+rosbagManager.showConnectionMsgs("/odom");
 ```
 
 #### Hide a topic:
 
 ```ts
-rosbagManager.hideConnectionMsgs('/odom');
+rosbagManager.hideConnectionMsgs("/odom");
 ```
 
 ---
@@ -161,6 +162,6 @@ rosbagManager.destroyInstance();
 
 This will:
 
-* Unsubscribe from all internal streams
-* Reset internal state
-* Release all resources
+- Unsubscribe from all internal streams
+- Reset internal state
+- Release all resources
