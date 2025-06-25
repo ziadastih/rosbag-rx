@@ -112,7 +112,7 @@ rosbagManager.messages$.subscribe({
 ### 📂 Load and Control Playback
 
 ```ts
-await rosbagManager.loadFile(file); // File, Blob, or ArrayBuffer
+rosbagManager.loadFile(file);
 
 rosbagManager.play();
 rosbagManager.pause();
