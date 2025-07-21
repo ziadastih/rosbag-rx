@@ -112,6 +112,7 @@ export class RosbagManager {
     if (!this._currentBagTime$.value) {
       this._currentBagTime$.next(bagMetadata.startTime);
     }
+    let lastElapsedSec = 0;
     this._wallStartTime = performance.now(); // real time in ms
     let bagTimeAtWallStart = this._currentBagTime$.value; // bag clock reference
     let lastPrefetchTimeSec =
@@ -128,8 +129,9 @@ export class RosbagManager {
         const newTimeSec = newBagTime.sec + newBagTime.nsec / 1e9;
         const previousBagTime = addSecToTime(
           bagTimeAtWallStart,
-          elapsedSec - 0.033
+          lastElapsedSec * this._options$.value.playbackSpeed
         );
+
         if (!isLessThan(newBagTime, bagMetadata.endTime)) {
           if (this._options$.value.loop) {
             const resetTime = bagMetadata.startTime;
@@ -149,6 +151,7 @@ export class RosbagManager {
         this._currentBagTime$.next(newBagTime);
         const messages = this._getMessagesInRange(previousBagTime, newBagTime);
         this._onMessages.next(messages);
+        lastElapsedSec = elapsedSec;
         if (
           newTimeSec - lastPrefetchTimeSec >
           this._options$.value.prefetch / 2
