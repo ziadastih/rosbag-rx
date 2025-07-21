@@ -5,6 +5,6 @@
 .env
 .DS_STORE
 
-
+webpack.config.js
 tsconfig.json
 tsup.config.ts
