@@ -1,7 +1,7 @@
 {
   "name": "rosbag-rx",
   "author": "ZiadAstih",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -27,7 +27,9 @@
   },
   "scripts": {
     "build": "tsup",
-    "lint": "tsc"
+    "lint": "tsc",
+    "dev:webpack": "webpack-dev-server",
+    "build:webpack": "webpack"
   },
   "dependencies": {
     "buffer": "^6.0.3",
@@ -39,7 +41,12 @@
   "devDependencies": {
     "@types/lz4js": "^0.2.1",
     "@types/node": "^24.0.3",
+    "html-webpack-plugin": "^5.6.3",
+    "ts-loader": "^9.5.2",
     "tsup": "^8.5.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "webpack": "^5.100.2",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
   }
 }
