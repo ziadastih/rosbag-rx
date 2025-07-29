@@ -1,11 +1,15 @@
-import { Observable } from "rxjs";
+import { Observable, Subject } from "rxjs";
 import { IRosbagMessage, ITime } from "./general.models";
 
 export interface IBagReader {
   loadFile(file: File): void;
   metadata$: Observable<IBagMetadata>;
   error$: Observable<string>;
-  prefetchChunks(startTime: ITime, prefetchVal: number): void;
+  prefetchChunks(
+    startTime: ITime,
+    prefetchVal: number,
+    cancel$: Subject<void>
+  ): void;
   getMessagesInRange(start: ITime, end: ITime): IRosbagMessage[];
   destroyReader(): void;
 }

@@ -19,7 +19,6 @@ export class Ros1BagReader implements IBagReader {
   private _bagInspector = new Ros1BagInspector();
   private _chunkManager = new Ros1ChunkManager();
   private _bagMetadata$ = new BehaviorSubject<IRos1BagMetadata | null>(null);
-  private _cancelPrefetch$ = new Subject<void>();
   private _destroyInstance$ = new Subject<void>();
   constructor() {
     this._bagInspector.bagMetadata$.subscribe((res) => {
@@ -52,7 +51,11 @@ export class Ros1BagReader implements IBagReader {
     this._chunkManager.setFile(file);
   }
 
-  prefetchChunks(startTime: ITime, prefetchVal: number): void {
+  prefetchChunks(
+    startTime: ITime,
+    prefetchVal: number,
+    cancel$: Subject<void>
+  ): void {
     if (!this._bagMetadata$.value) return;
     const prefetchEndTime = addSecToTime(startTime, prefetchVal);
     const { chunksInfo, endTime } = this._bagMetadata$.value;
@@ -75,11 +78,11 @@ export class Ros1BagReader implements IBagReader {
               chunk,
               chunk.nextChunkPosition,
               this._bagMetadata$.value.connections,
-              this._cancelPrefetch$
+              cancel$
             ),
           2
         ),
-        takeUntil(this._cancelPrefetch$)
+        takeUntil(cancel$)
       )
       .subscribe();
   }
@@ -112,8 +115,6 @@ export class Ros1BagReader implements IBagReader {
   }
 
   destroyReader(): void {
-    this._cancelPrefetch$.next();
-    this._cancelPrefetch$.complete();
     this._destroyInstance$.next();
     this._destroyInstance$.complete();
     this._bagInspector.destroyInstance();
