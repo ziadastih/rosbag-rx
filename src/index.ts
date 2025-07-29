@@ -1,1 +1,1 @@
-export { RosbagManager } from "./rosbagManager";
+export { RosbagManager } from "./rosbag-manager";

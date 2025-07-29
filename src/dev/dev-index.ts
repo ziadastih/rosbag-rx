@@ -1,4 +1,4 @@
-import { RosbagManager } from "../rosbagManager";
+import { RosbagManager } from "../rosbag-manager";
 import { addSecToTime } from "../utils/timeUtil";
 
 const input = document.getElementById("bag-input");
@@ -48,7 +48,7 @@ rosbagManager.state$.subscribe(({ bagMetadata, currentTime }) => {
   currentTimeEl.textContent = formatTime(current.sec, current.nsec);
   endTimeEl.textContent = formatTime(end.sec, end.nsec);
   bagMetadata.connections.forEach((conn) => {
-    rosbagManager.showConnectionMsgs(conn.topicName);
+    rosbagManager.showConnectionMsgs(conn);
   });
 });
 

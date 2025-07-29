@@ -3,27 +3,22 @@ import {
   combineLatest,
   exhaustMap,
   filter,
-  from,
   interval,
   map,
-  mergeMap,
   of,
   shareReplay,
   Subject,
   takeUntil,
   tap,
 } from "rxjs";
-import { BagInspector } from "./bag-inspector";
-import { ChunkInfoManager } from "./chunk-info-manager";
-import { IBagMetadata } from "./models/bag-inspector.model";
-import { addSecToTime, compareTime, isLessThan } from "./utils/timeUtil";
-import { IRosbagOptions, ITime } from "./models/general.models";
-import { IRosbagMessage } from "./models/chunk-info-manager.model";
+import { IBagMetadata, IBagReader } from "./models/rosbag-manager.models";
+import { IRosbagMessage, IRosbagOptions, ITime } from "./models/general.models";
+import { addSecToTime, isLessThan } from "./utils/timeUtil";
+import { Ros1BagReader } from "./ros1/ros1-bag-reader";
 
 export class RosbagManager {
-  private _bagInspector: BagInspector;
+  private _bagReader: IBagReader;
   private _bagMetadata$ = new BehaviorSubject<IBagMetadata | null>(null);
-  private _chunkManager: ChunkInfoManager;
   private _options$ = new BehaviorSubject<IRosbagOptions>({
     prefetch: 10,
     playbackSpeed: 1,
@@ -38,14 +33,8 @@ export class RosbagManager {
   private _destroyInstance$ = new Subject<void>();
   private _seek$ = new Subject<{ time: ITime; autoResume: boolean }>();
   private _cancelPrefetch$ = new Subject<void>();
+
   constructor() {
-    this._bagInspector = new BagInspector();
-    this._chunkManager = new ChunkInfoManager();
-    this._bagInspector.bagMetadata$.subscribe((res) => {
-      this._bagMetadata$.next(res);
-      this._currentBagTime$.next(res.startTime);
-      this._prefetchChunks(res.startTime);
-    });
     this._seek$
       .pipe(
         takeUntil(this._destroyInstance$),
@@ -67,6 +56,7 @@ export class RosbagManager {
       )
       .subscribe();
   }
+
   get state$() {
     return combineLatest([
       this._currentBagTime$,
@@ -95,16 +85,32 @@ export class RosbagManager {
     );
   }
   get error$() {
-    return this._bagInspector.error$.pipe(takeUntil(this._destroyInstance$));
+    return this._bagReader.error$.pipe(takeUntil(this._destroyInstance$));
   }
 
   loadFile(file: File) {
     this._resetPlayback();
-    this._bagInspector.setFile(file);
-    this._chunkManager.setFile(file);
     this._filteredConnections.clear();
+    const format = file.name.split(".")?.pop();
+    this._bagReader?.destroyReader();
+    switch (format) {
+      case "bag": // ros1
+        this._bagReader = null;
+        this._bagReader = new Ros1BagReader();
+        this._bagReader.loadFile(file);
+        break;
+      case "mcap": // ros2 mcap
+        break;
+    }
+    // todo verify this memory leak
+    this._bagReader.metadata$.subscribe((res) => {
+      this._bagMetadata$.next(res);
+      this._currentBagTime$.next(res.startTime);
+      this._prefetchChunks(res.startTime);
+    });
   }
-  //#region  playBack controls
+
+  //#region playback controls
 
   play(): void {
     const bagMetadata = this._bagMetadata$.value;
@@ -161,6 +167,7 @@ export class RosbagManager {
         }
       });
   }
+
   pause() {
     this._isPlaying$.next(false);
   }
@@ -168,90 +175,26 @@ export class RosbagManager {
     this._cancelPrefetch$.next();
     this._seek$.next({ time, autoResume: this._isPlaying$.value });
   }
+
+  private _resetPlayback(): void {
+    this.pause();
+    this._cancelPrefetch$.next();
+    this._currentBagTime$.next(null);
+  }
   //#endregion
 
-  updateOptions(options: Partial<IRosbagOptions>) {
-    this._options$.next({ ...this._options$.value, ...options });
+  private _prefetchChunks(startTime: ITime): void {
+    this._bagReader.prefetchChunks(startTime, this._options$.value.prefetch);
   }
+
+  private _getMessagesInRange(start: ITime, end: ITime): IRosbagMessage[] {
+    return this._bagReader.getMessagesInRange(start, end);
+  }
+
   showConnectionMsgs(connection: string) {
     this._filteredConnections.add(connection);
   }
   hideConnectionMsgs(connection: string) {
     this._filteredConnections.delete(connection);
-  }
-
-  destroyInstance() {
-    this._resetPlayback();
-    this._destroyInstance$.next();
-    this._destroyInstance$.complete();
-    this._bagInspector.destroyInstance();
-    this._filteredConnections.clear();
-  }
-
-  private _prefetchChunks(startTime: ITime): void {
-    if (!this._bagMetadata$.value) return;
-    const prefetchEndTime = addSecToTime(
-      startTime,
-      this._options$.value.prefetch
-    );
-    const { chunksInfo, endTime } = this._bagMetadata$.value;
-    const validEndTime =
-      compareTime(prefetchEndTime, endTime) > 0 ? endTime : prefetchEndTime;
-
-    const relevantChunks = chunksInfo.filter((chunk) => {
-      return (
-        compareTime(chunk.endTime, startTime) >= 0 &&
-        compareTime(chunk.startTime, validEndTime) <= 0
-      );
-    });
-
-    from(relevantChunks)
-      .pipe(
-        filter((chunk) => !this._chunkManager.hasChunk(chunk.idx)),
-        mergeMap(
-          (chunk) =>
-            this._chunkManager.readChunk$(
-              chunk,
-              chunk.nextChunkPosition,
-              this._bagMetadata$.value.connections,
-              this._cancelPrefetch$
-            ),
-          2
-        ),
-        takeUntil(this._cancelPrefetch$)
-      )
-      .subscribe();
-  }
-
-  private _getMessagesInRange(start: ITime, end: ITime): IRosbagMessage[] {
-    const { chunksInfo } = this._bagMetadata$.value ?? {};
-    if (!chunksInfo) return [];
-    const relevantChunks = chunksInfo.filter((chunk) => {
-      return (
-        compareTime(chunk.endTime, start) >= 0 &&
-        compareTime(chunk.startTime, end) <= 0
-      );
-    });
-
-    const result: IRosbagMessage[] = [];
-    for (let i = 0; i < relevantChunks.length; i++) {
-      if (!this._chunkManager.hasChunk(relevantChunks[i].idx)) continue;
-      const cached = this._chunkManager.getCachedChunk(relevantChunks[i].idx);
-      for (let j = 0; j < cached.length; j++) {
-        if (
-          compareTime(cached[j].time, start) >= 0 &&
-          compareTime(cached[j].time, end) <= 0
-        ) {
-          result.push(cached[j]);
-        }
-      }
-    }
-
-    return result;
-  }
-  private _resetPlayback(): void {
-    this.pause();
-    this._cancelPrefetch$.next();
-    this._currentBagTime$.next(null);
   }
 }

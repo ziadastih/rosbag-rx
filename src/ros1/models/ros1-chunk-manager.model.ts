@@ -1,10 +1,5 @@
-import { IRecord as IRecord, ITime } from "./general.models";
-
-export interface IRosbagMessage {
-  topic: string;
-  time: ITime;
-  data: any;
-}
+import { IRosbagMessage, ITime } from "../../models/general.models";
+import { IRecord } from "./ros1-general.models";
 
 export interface IChunkCache {
   messages: IRosbagMessage[];
@@ -48,17 +43,4 @@ export interface IIndexData extends IRecord {
 export interface IIndexDataMsg {
   recievedTime: ITime;
   msgDataOffset: number;
-}
-
-export interface IMsgFormat {
-  key: string;
-  keyType: string;
-  isArray: boolean;
-  nestedKeys: IMsgFormat[];
-  constantValue: undefined | string;
-  arrayLength: undefined | number;
-}
-export interface IMsgSchema {
-  topLevelKeys: IMsgFormat[];
-  MSGSTypes: Map<string, IMsgFormat>;
 }

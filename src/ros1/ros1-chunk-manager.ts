@@ -1,25 +1,23 @@
 import { defer, Observable, of, Subject, takeUntil } from "rxjs";
+import { MessageReaders } from "../message-reader";
 import {
-  extractTime,
-  parseMsgDefinition,
+  IChunkCache,
+  IChunkInfo,
+  IConnection,
+  IIndexData,
+  IIndexDataMsg,
+} from "./models/ros1-chunk-manager.model";
+import {
   recordDecompression,
   retrieveRecordsFromBuffer,
   shallowRecordRead,
-} from "./helper-functions";
-import { MessageReaders } from "./message-reader";
-import { IRecordShallow } from "./models/general.models";
-import { compareTime } from "./utils/timeUtil";
-import { Buffer } from "buffer";
-import {
-  IChunkInfo,
-  IConnection,
-  IChunkCache,
-  IIndexData,
-  IIndexDataMsg,
-  IRosbagMessage,
-  IMsgSchema,
-} from "./models/chunk-info-manager.model";
-export class ChunkInfoManager {
+} from "./ros1-helper-functions";
+import { compareTime } from "../utils/timeUtil";
+import { IRecordShallow } from "./models/ros1-general.models";
+import { IMsgSchema, IRosbagMessage } from "../models/general.models";
+import { extractTime, parseMsgDefinition } from "../helper-functions";
+
+export class Ros1ChunkManager {
   private _bagFile: File;
   private _connections: Map<number, IConnection>;
   private _msgSchemas: Map<string, IMsgSchema> = new Map();
@@ -88,6 +86,10 @@ export class ChunkInfoManager {
     ).pipe(takeUntil(cancel$));
   }
 
+  destroyInstance() {
+    this._chunkCache.clear();
+    this._bagFile = null;
+  }
   private _cleanupCache(): void {
     while (
       this._currentCacheBytes > this._maxCacheBytes &&

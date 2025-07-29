@@ -1,6 +1,6 @@
 import int53 from "int53";
+import { IMsgFormat, IMsgSchema } from "./models/general.models";
 import { extractTime } from "./helper-functions";
-import { IMsgFormat, IMsgSchema } from "./models/chunk-info-manager.model";
 
 export class StdTypeReader {
   buffer: Buffer;
